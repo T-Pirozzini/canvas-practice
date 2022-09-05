@@ -42,10 +42,12 @@ class FlowFieldEffect {
     this.lastTime = 0;
     this.interval = 1000/60; // 60 frames per second
     this.timer = 0; 
-    this.cellSize = 15;
+    this.cellSize = 20;
     this.gradient;
     this.#createGradient();
     this.#ctx.strokeStyle = this.gradient;
+    this.radius = 0;
+    this.vr = 0.03;
   }
   #createGradient() {
     this.gradient = this.#ctx.createLinearGradient(0, 0, this.#width, this.#height);
@@ -55,13 +57,19 @@ class FlowFieldEffect {
     this.gradient.addColorStop("0.6", "#b3ffff");
     this.gradient.addColorStop("0.8", "#80ff80");
     this.gradient.addColorStop("0.9", "#ffff33");
-
   }
   #drawLine(angle, x, y) {
-    const length = 300;
+    let positionX = x;
+    let positionY = y;
+    let dx = mouse.x - positionX;
+    let dy = mouse.y - positionY;
+    let distance = dx * dx + dy * dy;
+    if (distance > 400000) distance = 500000;
+    else if (distance < 100000) distance = 50000;
+    let length = distance/10000; // multiplication is more efficient than division
     this.#ctx.beginPath();
     this.#ctx.moveTo(x, y);
-    this.#ctx.lineTo(x + Math.cos(angle) * 30, y + Math.sin(angle) * 30);
+    this.#ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length); // changes length of lines
     this.#ctx.stroke();
   }
   animate(timeStamp) {
@@ -69,11 +77,16 @@ class FlowFieldEffect {
     this.lastTime = timeStamp;
     // if (this.timer > this.interval) {      
       this.#ctx.clearRect(0, 0, this.#width, this.#height);
+      this.radius += this.vr;
+      if (this.radius > 5 || this.radius < -5) {
+        this.vr *= -1;
+      }
 
       for (let y = 0; y < this.#height; y += this.cellSize) {
         for (let x = 0; x < this.#width; x += this.cellSize) {
-          const angle = Math.cos(x * 0.01) + Math.sin(y * 0.01);
+          const angle = Math.cos(mouse.x * x * 0.00007) + Math.sin(mouse.y * y * 0.00007) * this.radius; // affects how zoomed in we are to the pattern
           this.#drawLine(angle, x, y);
+          console.log('animate')
         }
       // } 
 
